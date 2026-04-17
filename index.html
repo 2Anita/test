@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>滑雪人格测试 - 你是哪种雪友？</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+      min-height: 100vh;
+      color: #1e293b;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .header { text-align: center; padding: 30px 0; }
+    .header h1 { font-size: 2rem; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .header .subtitle { font-size: 0.95rem; color: #64748b; }
+    .ski-icon { font-size: 3rem; margin-bottom: 12px; display: flex; justify-content: center; gap: 12px; }
+    .snowflakes { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: -1; }
+    .snowflake { position: absolute; color: #7dd3fc; opacity: 0.7; font-size: 1.2rem; animation: fall linear infinite; }
+    @keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); } 100% { transform: translateY(110vh) rotate(360deg); } }
+    .progress-bar-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .progress-bar { background: #e2e8f0; border-radius: 10px; height: 8px; flex: 1; overflow: hidden; }
+    .progress-fill { background: linear-gradient(90deg, #0ea5e9, #38bdf8, #7dd3fc); height: 100%; border-radius: 10px; transition: width 0.5s ease; position: relative; }
+    .progress-fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 2s infinite; }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    .progress-text { font-size: 0.85rem; color: #0ea5e9; font-weight: 600; min-width: 50px; text-align: right; }
+    .question-card { background: white; border-radius: 20px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .question-number { font-size: 0.75rem; color: #0ea5e9; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+    .question-text { font-size: 1.1rem; font-weight: 500; color: #1e293b; margin-bottom: 20px; line-height: 1.6; }
+    .options { display: flex; flex-direction: column; gap: 10px; }
+    .option-btn { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; font-size: 0.9rem; color: #334155; cursor: pointer; transition: all 0.25s ease; text-align: left; font-family: inherit; }
+    .option-btn:hover { border-color: #0ea5e9; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); transform: translateX(4px); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15); }
+    .option-btn .option-label { font-weight: 700; color: #0ea5e9; margin-right: 8px; }
+    .option-btn .option-main { display: block; margin-bottom: 5px; line-height: 1.5; }
+    .option-btn .option-detail { font-size: 0.78rem; color: #f97316; font-style: italic; display: block; line-height: 1.4; }
+    .start-screen, .result-screen { display: none; }
+    .start-screen.active, .result-screen.active { display: block; }
+    .quiz-screen { display: none; }
+    .quiz-screen.active { display: block; }
+    .start-btn, .restart-btn { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; border: none; border-radius: 12px; padding: 14px 36px; font-size: 1rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.3s ease; margin-top: 24px; }
+    .start-btn:hover, .restart-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4); }
+
+    .result-card { background: white; border-radius: 24px; padding: 32px 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; animation: fadeIn 0.6s ease; }
+    .result-header { margin-bottom: 24px; }
+    .result-header h2 { font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+    .result-badge { display: inline-block; background: linear-gradient(135deg, #0f172a, #1e293b); color: white; font-size: 1.4rem; font-weight: 700; padding: 10px 24px; border-radius: 30px; letter-spacing: 2px; margin-bottom: 12px; }
+    .result-tag { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .result-subtitle { font-size: 1rem; color: #0ea5e9; font-weight: 500; margin-bottom: 8px; }
+    .result-summary { font-size: 1rem; color: #64748b; line-height: 1.6; margin-top: 12px; padding: 0 10px; }
+    .result-divider { width: 60px; height: 3px; background: linear-gradient(90deg, #0ea5e9, #38bdf8); margin: 24px auto; border-radius: 2px; }
+
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+    .result-grid-item { background: linear-gradient(135deg, #f8fafc, #f0f9ff); border-radius: 12px; padding: 14px 12px; text-align: left; }
+    .result-grid-item .item-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .result-grid-item .item-value { font-size: 0.9rem; color: #1e293b; font-weight: 600; }
+
+    .result-section { text-align: left; margin: 20px 0; padding: 0 4px; }
+    .result-section h3 { font-size: 0.85rem; color: #0ea5e9; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .result-section h3::before { content: ''; width: 4px; height: 16px; background: linear-gradient(180deg, #0ea5e9, #38bdf8); border-radius: 2px; }
+    .result-section p { font-size: 0.95rem; color: #475569; line-height: 1.8; }
+    .result-section.friends { background: linear-gradient(135deg, #f8fafc, #f0f9ff); border-radius: 14px; padding: 18px 16px; margin-top: 16px; }
+    .result-section.friends p { font-style: italic; color: #64748b; position: relative; padding-left: 16px; }
+    .result-section.friends p::before { content: '"'; position: absolute; left: 0; top: -4px; font-size: 1.8rem; color: #cbd5e1; font-style: normal; }
+
+    .deep-analysis { margin-top: 20px; }
+    .deep-analysis-toggle { background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 2px solid #bae6fd; border-radius: 12px; padding: 14px 20px; font-size: 0.95rem; font-weight: 600; color: #0284c7; cursor: pointer; font-family: inherit; width: 100%; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .deep-analysis-toggle:hover { background: linear-gradient(135deg, #e0f2fe, #bae6fd); transform: translateY(-1px); }
+    .deep-analysis-toggle .arrow { transition: transform 0.3s ease; }
+    .deep-analysis-toggle.active .arrow { transform: rotate(180deg); }
+    .deep-analysis-content { display: none; margin-top: 16px; text-align: left; }
+    .deep-analysis-content.active { display: block; animation: fadeIn 0.4s ease; }
+    .deep-item { background: #f8fafc; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+    .deep-item:last-child { margin-bottom: 0; }
+    .deep-item .deep-label { font-size: 0.75rem; color: #0ea5e9; font-weight: 600; margin-bottom: 6px; }
+    .deep-item .deep-value { font-size: 0.9rem; color: #475569; line-height: 1.6; }
+
+    .safety-reminder { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px; margin-top: 20px; font-size: 0.8rem; color: #dc2626; line-height: 1.6; }
+    .xiaohongshu { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+    .xiaohongshu a { color: #64748b; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .xiaohongshu a:hover { color: #0ea5e9; }
+
+    .mountain-decoration { position: fixed; bottom: 0; left: 0; width: 100%; height: 180px; pointer-events: none; opacity: 0.06; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 200'%3E%3Cpath fill='%230f172a' d='M0,200 L200,50 L400,150 L600,20 L800,120 L1000,60 L1200,200 Z'/%3E%3C/svg%3E") no-repeat bottom center; background-size: cover; }
+    @media (max-width: 480px) {
+      .header h1 { font-size: 1.7rem; }
+      .question-text { font-size: 1rem; }
+      .result-tag { font-size: 1.5rem; }
+      .result-badge { font-size: 1.2rem; }
+      .option-btn .option-main { font-size: 0.85rem; }
+      .result-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="snowflakes">
+    <div class="snowflake" style="left: 10%; animation-duration: 15s; animation-delay: 0s;">❄</div>
+    <div class="snowflake" style="left: 20%; animation-duration: 12s; animation-delay: 2s;">❄</div>
+    <div class="snowflake" style="left: 35%; animation-duration: 18s; animation-delay: 4s;">❄</div>
+    <div class="snowflake" style="left: 50%; animation-duration: 14s; animation-delay: 1s;">❄</div>
+    <div class="snowflake" style="left: 65%; animation-duration: 16s; animation-delay: 3s;">❄</div>
+    <div class="snowflake" style="left: 80%; animation-duration: 13s; animation-delay: 5s;">❄</div>
+    <div class="snowflake" style="left: 90%; animation-duration: 17s; animation-delay: 2.5s;">❄</div>
+  </div>
+  <div class="mountain-decoration"></div>
+  <div class="container">
+    <div class="start-screen active" id="startScreen">
+      <div class="header">
+        <div class="ski-icon"><span>🎿</span><span>🏔️</span><span>🛷</span></div>
+        <h1>滑雪人格测试</h1>
+        <p class="subtitle">双板还是单板？你是哪类雪友？</p>
+      </div>
+      <div class="question-card" style="text-align: center;">
+        <p style="font-size: 0.95rem; color: #64748b; line-height: 1.7; margin-bottom: 16px;">
+          30道趣味选择题<br>
+          测出你的专属滑雪人格<br>
+          生成四字母编码 · 解锁人设标签
+        </p>
+        <button class="start-btn" onclick="startQuiz()">开始测试</button>
+      </div>
+    </div>
+    <div class="quiz-screen" id="quizScreen">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 3.33%"></div></div>
+        <div class="progress-text" id="progressText">1/30</div>
+      </div>
+      <div class="question-card">
+        <div class="question-number" id="questionNumber">问题 1</div>
+        <div class="question-text" id="questionText"></div>
+        <div class="options">
+          <button class="option-btn" id="optionA" onclick="selectOption('A')">
+            <span class="option-label">A.</span><span class="option-main" id="optionAMain"></span><span class="option-detail" id="optionADetail"></span>
+          </button>
+          <button class="option-btn" id="optionB" onclick="selectOption('B')">
+            <span class="option-label">B.</span><span class="option-main" id="optionBMain"></span><span class="option-detail" id="optionBDetail"></span>
+          </button>
+          <button class="option-btn" id="optionC" onclick="selectOption('C')">
+            <span class="option-label">C.</span><span class="option-main" id="optionCMain"></span><span class="option-detail" id="optionCDetail"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="result-screen" id="resultScreen">
+      <div class="result-card">
+        <div class="result-header">
+          <h2>你的滑雪人格类型</h2>
+          <div class="result-badge" id="resultCode"></div>
+          <div class="result-tag" id="resultTag"></div>
+          <div class="result-subtitle" id="resultSubtitle"></div>
+          <p class="result-summary" id="resultSummary"></p>
+        </div>
+
+        <div class="result-divider"></div>
+
+        <div class="result-grid">
+          <div class="result-grid-item">
+            <div class="item-label">滑行风格</div>
+            <div class="item-value" id="dimS"></div>
+          </div>
+          <div class="result-grid-item">
+            <div class="item-label">地形偏好</div>
+            <div class="item-value" id="dimT"></div>
+          </div>
+          <div class="result-grid-item">
+            <div class="item-label">社交属性</div>
+            <div class="item-value" id="dimG"></div>
+          </div>
+          <div class="result-grid-item">
+            <div class="item-label">风险偏好</div>
+            <div class="item-value" id="dimR"></div>
+          </div>
+        </div>
+
+        <div class="result-section friends">
+          <h3>雪友眼中的你</h3>
+          <p id="resultFriend"></p>
+        </div>
+
+        <div class="deep-analysis">
+          <button class="deep-analysis-toggle" id="deepToggle" onclick="toggleDeepAnalysis()">
+            <span>展开深度分析</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div class="deep-analysis-content" id="deepContent">
+            <div class="deep-item">
+              <div class="deep-label">⛰️ 你的优势滑行场景</div>
+              <div class="deep-value" id="deepScene"></div>
+            </div>
+            <div class="deep-item">
+              <div class="deep-label">🗺️ 你适合的雪场路线</div>
+              <div class="deep-value" id="deepRoute"></div>
+            </div>
+            <div class="deep-item">
+              <div class="deep-label">🎯 你适合提升的技巧方向</div>
+              <div class="deep-value" id="deepSkill"></div>
+            </div>
+            <div class="deep-item">
+              <div class="deep-label">👥 适合一起滑的雪友类型</div>
+              <div class="deep-value" id="deepBuddy"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="safety-reminder">
+          本测试仅供娱乐参考，不具备科学依据，不构成人格标签、心理诊断或滑雪水平定位。
+        </div>
+
+        <div class="xiaohongshu">
+          <a href="#">📕 小红书 @姜北风</a>
+        </div>
+
+        <button class="restart-btn" onclick="restartQuiz()">重新测试</button>
+      </div>
+    </div>
+  </div>
+  <script>
+const questions = [
+  { dim:'T', q:'滑雪时，你优先冲哪种场景？', A:'双板道内卡宾+小弯（丝滑流畅，贴雪滑行，注重转弯细腻度）', Ad:'道内卷王，不疯不冲，就想把弯滑得好看，拍照出片是首要目标', B:'单板小树林+粉雪（穿梭林间，搓粉雪，享受远离人群的自在感）', Bd:'不爱凑热闹，就爱钻林子、搓粉雪，主打一个自在随性', C:'双板旗门+单板平行大回转（速度与精准，享受速度带来的快感）', Cd:'假装自己是专业选手，装X+速度双重满足，主打一个飒爽' },
+  { dim:'T', q:'面对雪场蘑菇（mogul），你的反应是？', A:'双板小弯切蘑菇（丝滑通关，不慌不忙，尽显技巧）', Ad:'蘑菇区大神，每一步都踩得很稳，能把折磨滑成享受', B:'绕路走，主打"不找罪受"，转头去滑道内平路', Bd:'蘑菇=折磨，我滑雪是来放松的不是来练核心的，能绕就绕', C:'尝试单板平花过蘑菇（随性耍帅，摔倒也不气馁）', Cd:'不追求技术多好，就想耍耍帅，开心最重要，主打一个随性不羁' },
+  { dim:'T', q:'雪场有旗门赛道，你会？', A:'冲进去试试双板平行大回转（专注每一个旗门的转弯，力求精准）', Ad:'骨子里有竞技魂，假装自己在比赛，输赢不重要，仪式感拉满', B:'远远围观，还是单板平花更对味，找平整雪道练习平花动作', Bd:'旗门太严肃，不适合我这种爱耍帅的人，还是平花自在', C:'邀请雪友一起尝试，主打热闹，互相调侃、拍照记录', Cd:'自己玩没意思，约朋友凑个热闹，能拍视频、唠嗑才是关键' },
+  { dim:'T', q:'空闲时，你更爱探索哪种小众场景？', A:'双板小树林穿行（隐秘乐趣，穿梭林间未被压过的雪道）', Ad:'道内人太多吵吵闹闹，钻林子既安静又有惊喜，主打一个隐秘自在', B:'单板粉雪陡坡（刺激解压，快速滑下，释放所有压力）', Bd:'越陡越爽，越粉越香，哪怕偶尔摔倒也觉得值，主打一个敢冲敢玩', C:'双板自由式跳台（挑战自我，尝试简单跳台动作，感受腾空快乐）', Cd:'不做传统双板人，跳台腾空的感觉太爽了，主打一个叛逆灵活' },
+  { dim:'T', q:'雪场有未开发的野雪区域，你会？', A:'谨慎观望，不轻易进入，只在开发区域滑行', Ad:'安全第一，野雪虽香但风险太高，主打一个谨慎保守', B:'约上有经验的雪友一起探索，提前检查装备、了解雪况', Bd:'野雪很香但不敢独自去，约上老炮一起，主打一个稳妥冒险', C:'独自进入探索，凭借经验判断雪况，享受独自征服的成就感', Cd:'自信爆棚，喜欢独自探索的自由，征服未开发区的感觉太有成就感了' },
+  { dim:'T', q:'面对平缓的粉雪区域，你会选择？', A:'双板小弯慢慢滑，感受粉雪的松软，慢慢欣赏周围的雪景', Ad:'粉雪太珍贵不想浪费，慢慢滑细细感受，主打一个沉浸式享受', B:'单板刻滑快速滑，贴雪滑行，留下漂亮的刻痕', Bd:'粉雪+刻滑双重满足，爽就完了，主打一个速度激情', C:'随意滑行，偶尔停下来拍拍照，不讲究技巧和速度', Cd:'拍照发圈才是重点，滑得好不好不重要，主打一个快乐记录' },
+  { dim:'S', q:'你的滑行风格更偏向？', A:'双板自由式（跳台、道具都敢试，主打灵活多变）', Ad:'不做传统双板人，越有难度越兴奋，主打一个叛逆灵活', B:'单板刻滑（贴雪滑行，姿势拉满，追求"贴地飞行"的感觉）', Bd:'颜值即正义，姿势一定要帅，刻痕一定要好看，主打一个颜值在线', C:'休闲滑行（双板小弯/单板平花随意切换，主打放松自在）', Cd:'不卷不冲，怎么舒服怎么滑，主打一个佛系休闲' },
+  { dim:'S', q:'滑行时，你更注重？', A:'双板小弯/卡宾流畅度（姿势好看大于一切，拍照出片最重要）', Ad:'滑行就是为了出片，朋友圈发图必须惊艳所有人，主打一个精致滑行', B:'单板平花的随性与创意（怎么开心怎么扭，主打个性）', Bd:'不被标准束缚，自己怎么喜欢怎么来，主打一个随性不羁', C:'速度与激情（无论是双板旗门还是单板刻滑，都追求最快速度）', Cd:'速度就是快乐，越快越爽，主打一个敢冲敢玩' },
+  { dim:'S', q:'你更擅长哪种板型+风格？', A:'双板（道内卡宾、旗门、蘑菇都能拿捏，偶尔尝试自由式）', Ad:'传统雪友实锤，稳字当头，技术扎实，主打一个全面稳健', B:'单板（公园跳台、平花、刻滑切换自如，擅长耍帅）', Bd:'单板显眼包，走到哪滑到哪，耍帅从不缺席，主打一个多才多艺', C:'双板+单板双修（根据心情切换，主打全能）', Cd:'不做单一板型党，想稳时滑双板，想耍帅时滑单板，主打一个随心所欲' },
+  { dim:'S', q:'滑雪时，你会刻意练习哪种技巧？', A:'双板平行大回转+蘑菇技巧（主打专业进阶，每天刻意练习）', Ad:'卷就完了，别人会的我要会，别人不会的我也要练，主打一个内卷奋进', B:'单板公园道具+平花动作（主打耍帅吸睛，练习只为发圈）', Bd:'练习不是为了提升技术，是为了发圈装X，主打一个颜值至上', C:'基础技巧巩固（不追求高难度，只巩固基础动作，够用就好）', Cd:'不卷不冲，基础扎实就够了，主打一个佛系够用' },
+  { dim:'S', q:'滑行时，你的节奏更偏向？', A:'慢速细腻（双板小弯慢慢滑，单板平花慢慢扭）', Ad:'不着急，慢慢滑，细细感受滑雪的快乐，主打一个细腻享受', B:'中速稳健（速度适中，双板卡宾、单板刻滑都能轻松驾驭）', Bd:'稳中求进，既能享受快乐又能保证安全，主打一个稳妥舒适', C:'快速激进（全程高速滑行，双板旗门、单板粉雪陡坡都敢冲）', Cd:'越快越爽，追求极致刺激，主打一个速度至上' },
+  { dim:'S', q:'面对不熟悉的滑行技巧，你会？', A:'主动请教雪友，认真学习，反复练习，直到掌握为止', Ad:'不懂就问，愿意向别人学习，主打一个谦虚好学', B:'自己琢磨，慢慢尝试，不急于求成', Bd:'不爱麻烦别人，自己慢慢琢磨，主打一个独立探索', C:'直接放弃，专注于自己擅长的领域', Cd:'没必要为难自己，主打一个佛系避坑' },
+  { dim:'G', q:'你更喜欢哪种滑雪方式？', A:'独自练双板卡宾/单板刻滑（专注提升，不被打扰）', Ad:'社恐实锤，滑雪是自己的事，默默变厉害，主打一个独处提升', B:'组团冲单板公园/双板小树林（热闹至上，互相拍视频）', Bd:'滑雪不拍照等于白滑，和朋友一起玩快乐翻倍，主打一个社交娱乐', C:'随缘滑行，偶尔和陌生雪友搭话，不刻意组团也不刻意独处', Cd:'不社恐也不社牛，随缘就好，主打一个随心所欲' },
+  { dim:'G', q:'雪场休息时，你会主动和陌生雪友交流吗？', A:'不会，默默刷别人的视频，或者休息补充体力', Ad:'别人滑得再厉害也不主动搭话，主打一个暗中观察', B:'会，凑过去聊技巧，主动分享经验，约着一起滑', Bd:'遇到同好就唠，主打一个社牛本牛', C:'看情况，对方主动就聊，不主动发起话题', Cd:'不主动不拒绝，随缘社交，主打一个礼貌适度' },
+  { dim:'G', q:'组团滑雪时，你更愿意？', A:'跟着别人走，主打"躺平"，别人滑啥我滑啥', Ad:'不想费脑子，跟着大神混就好，主打一个躺平摆烂', B:'主动带大家冲，当团队"主心骨"，负责找线路、教技巧', Bd:'我就是雪场向导，主打一个靠谱担当', C:'中间角色，配合大家的节奏，偶尔分享自己知道的线路', Cd:'不抢风头也不拖后腿，主打一个佛系配合' },
+  { dim:'G', q:'你会把自己的滑雪视频/照片分享到社交平台吗？', A:'不会，练好了再发，不允许自己有翻车镜头', Ad:'不发则已，一发必是精品，主打一个精致完美', B:'会，翻车了也发，主打真实，分享滑雪日常', Bd:'主打一个真实不做作，开心最重要', C:'偶尔发，只发觉得好看的片段，不刻意追求点赞', Cd:'随缘分享，不刻意炫耀，主打一个随性记录' },
+  { dim:'G', q:'雪友约你挑战高难度场景，你会？', A:'果断拒绝，不喜欢挑战高难度，只想在自己舒适区滑行', Ad:'安全第一，高难度太危险，果断拒绝，主打一个谨慎避险', B:'欣然答应，有雪友在身边能互相照顾、互相鼓励', Bd:'有雪友陪着胆子就大了，主打一个勇敢尝试', C:'犹豫一下，先看雪友的技术，能照顾自己就答应', Cd:'先评估风险，稳妥为主，主打一个理性谨慎' },
+  { dim:'G', q:'滑雪结束后，你会和雪友一起聚餐、复盘吗？', A:'不会，滑完就回家，只想好好休息', Ad:'滑完雪已经很累了，不想再社交，主打一个独处复盘', B:'会，积极参与聚餐，和雪友聊当天的趣事、翻车瞬间', Bd:'滑雪的快乐不止在雪道上，主打一个社交延续', C:'看情况，若雪友强烈邀请就去，若太累就拒绝', Cd:'根据自己状态来，不勉强自己，主打一个随性自在' },
+  { dim:'R', q:'滑雪前，你会仔细检查装备吗？', A:'不会，双板/单板能滑就行，凭感觉来', Ad:'装备是次要的，开心最重要，主打一个随性懒得检查', B:'会，每一处都检查到位，确保装备安全', Bd:'装备是雪友的命，必须仔细检查，主打一个安全至上', C:'简单检查关键部位（固定器、头盔），其他随缘', Cd:'关键部位确保安全，其他随缘，主打一个敷衍检查' },
+  { dim:'R', q:'面对陡峭的粉雪坡面，你会？', A:'尝试双板小弯慢慢下（谨慎试探，确保安全）', Ad:'刺激可以有但不能玩命，主打一个谨慎稳妥', B:'单板刻滑冲下去（速战速决，摔了也不后悔）', Bd:'越陡越兴奋，粉雪+刻滑双重快乐，主打一个敢冲敢玩', C:'先观察雪况，邀请雪友在旁边接应，再尝试滑行', Cd:'理性冒险，有雪友接应心里更有底，主打一个稳妥冒险' },
+  { dim:'R', q:'你对滑雪装备的态度是？', A:'够用就好，新手套装或性价比高的装备就可以', Ad:'不攀比装备，技术好才是真的好，主打一个务实不攀比', B:'精致讲究，头盔、雪服等必须顶配，颜值与性能双在线', Bd:'装备即身份，滑得好不好另说装备一定要够帅，主打一个颜值与性能双在线', C:'中等配置，选择适合自己技术水平的装备', Cd:'理性消费，根据技术水平选装备，主打一个理性务实' },
+  { dim:'R', q:'第一次去陌生雪场，你会？', A:'先练双板小弯/单板平花，熟悉雪质、雪道坡度', Ad:'不盲目跟风，先适应环境，稳字当头，主打一个谨慎适应', B:'直接冲双板旗门/单板公园，快速解锁新场景', Bd:'来都来了不挑战一下等于白来，主打一个敢闯敢试', C:'找雪场工作人员或本地雪友请教，了解雪道分布', Cd:'不盲目冒险也不胆小退缩，先了解情况再合理选择，主打一个理性探索' },
+  { dim:'R', q:'你会佩戴全套安全装备吗？', A:'不会，觉得麻烦，只戴头盔，其他护具不戴', Ad:'头盔是底线，其他太麻烦，主打一个侥幸心理', B:'会，全套安全装备都佩戴，不抱侥幸心理', Bd:'安全第一不怕麻烦，主打一个安全谨慎', C:'看场景，道内只戴头盔，野雪、公园等高危场景再戴全套', Cd:'理性防护，道内相对安全，高危场景必须全套，主打一个灵活防护' },
+  { dim:'R', q:'若滑雪装备出现小故障，你会？', A:'继续滑行，觉得小故障不影响，等滑完再处理', Ad:'小事一桩不影响滑行，懒得停下来处理，主打一个敷衍拖延', B:'立刻停下来自己尝试修理，若修不好就放弃滑行', Bd:'装备故障不能忽视，立刻处理安全第一，主打一个谨慎负责', C:'暂时继续滑行，滑完当天再找专业人员修理', Cd:'小故障不影响安全，先滑完再说，主打一个兼顾体验与安全' },
+  { dim:'T', q:'你滑雪的主要目的是？', A:'解压放松，滑滑双板小弯、单板平花，享受雪地时光', Ad:'不卷不冲，滑雪就是为了放松，主打一个解压治愈', B:'挑战自我，解锁双板自由式、单板公园高难度动作', Ad:'就爱挑战不可能，每解锁新动作都有成就感，主打一个挑战奋进', C:'社交娱乐，和雪友一起滑雪、聚餐、分享日常', Cd:'滑雪只是载体，和朋友一起玩才是重点，主打一个社交娱乐' },
+  { dim:'S', q:'滑雪时不小心摔倒，你会？', A:'休息一会儿，再谨慎继续，不急于求成', Ad:'摔怕了先缓一缓，安全第一，主打一个谨慎保守', B:'立刻爬起来拍一拍雪继续冲，越摔越勇', Bd:'摔了又怎样，越摔越勇绝不服输，主打一个顽强不屈', C:'先检查有没有受伤，若没事就继续，有伤就处理后再滑', Cd:'理性对待摔倒，不盲目逞强也不轻易放弃，主打一个理性务实' },
+  { dim:'G', q:'即使天气不好，你也会去滑雪吗？', A:'不会，天气好再去滑，天气不好滑得不舒服还容易受伤', Ad:'天气不好太难受还容易受伤，不如在家等好天气，主打一个佛系等待', B:'会，轻微天气不影响，哪怕只能滑双板小树林、单板刻滑也开心', Bd:'雪瘾犯了管它天气好不好，主打一个执着热爱', C:'看情况，若只是轻微大风小雪就去，暴风雪就不去', Cd:'理性对待天气，根据情况做决定，主打一个理性热爱' },
+  { dim:'R', q:'你会主动尝试滑雪新玩法吗？', A:'不会，专注双板卡宾/单板平花，把自己擅长的练到极致', Ad:'术业有专攻，不贪多，主打一个专注专一', B:'会，双板自由式、单板公园新道具、野雪新线路都想试试', Bd:'好奇心爆棚，什么新鲜玩法都想体验，主打一个多才多艺', C:'偶尔尝试，只尝试自己感兴趣、难度适中的新玩法', Cd:'不排斥新鲜事物也不盲目逞强，选择感兴趣且能驾驭的，主打一个适度尝试' },
+  { dim:'T', q:'若你是滑雪新手，你会？', A:'找专业教练教学，系统学习，打好基础', Ad:'新手就要有新手的样子，找教练系统学习，主打一个认真踏实', B:'自己摸索，看视频学习，慢慢尝试', Bd:'不爱花钱找教练，自己慢慢摸索，主打一个独立探索', C:'让雪友带着教，一边滑一边学，既能学技巧又能和朋友玩', Cd:'省钱又社交，让雪友带着教一举两得，主打一个务实社交' },
+  { dim:'S', q:'滑雪对你来说，更像是？', A:'一种爱好，闲暇时间用来放松自己，不追求技术', Ad:'滑雪就是普通爱好，和追剧一样用来放松，主打一个爱好休闲', B:'一种追求，不断提升技术，解锁更多高难度场景', Bd:'滑雪是一种追求，享受征服的成就感，主打一个追求极致', C:'一种社交方式，通过滑雪认识更多志同道合的朋友', Cd:'滑雪只是载体，认识新朋友才是重点，主打一个社交载体' }
+];
+
+const results = {
+  'T1S1G1R1':{tag:'雪场咸鱼王',subtitle:'佛系摆烂型',summary:'滑雪对你来说就是换个地方放松，主打"不卷不冲，开心就好"。',dimT:'道内保守',dimS:'慢速休闲',dimG:'社恐独行',dimR:'安全第一',friend:'跟他滑雪就像散步，双板卡宾滑得慢悠悠，单板平花也只敢在平地扭，主打一个佛系到底。',deepScene:'道内初/中级道、公园平花区、粉雪平缓区域',deepRoute:'先从雪场主道开始，慢慢熟悉后可以尝试道边野雪区',deepSkill:'基础平行式刹车、转弯控制',deepBuddy:'佛系休闲型雪友，不追求速度和难度'},
+  'T1S1G1R2':{tag:'雪场独行侠',subtitle:'低调冒险者',summary:'你喜欢独自滑雪享受自由，骨子里藏着一丝冒险精神。',dimT:'道内保守',dimS:'慢速休闲',dimG:'社恐独行',dimR:'敢于小试',friend:'他总一个人滑，看着佛系，没想到双板蘑菇能慢慢切，单板也敢冲粉雪边缘，深藏不露。',deepScene:'道内中高级道、蘑菇道边缘、粉雪浅区',deepRoute:'雪场高级道旁的野雪区域，视野好且相对安全',deepSkill:'蘑菇节奏控制、粉雪基础滑行',deepBuddy:'低调实力派，不爱说话但有经验'},
+  'T1S1G2R1':{tag:'雪场气氛组',subtitle:'快乐搭子型',summary:'你滑雪的核心目的是和朋友一起开心，氛围到位才关键。',dimT:'道内保守',dimS:'慢速休闲',dimG:'社交达人',dimR:'安全第一',friend:'有他在滑雪就不会无聊，哪怕全程在道内滑双板卡宾、单板平花，也能玩得很开心，氛围担当实锤。',deepScene:'道内初级道、公园平花区、餐厅休息区',deepRoute:'雪场主道加咖啡厅巡游，轻松愉快',deepSkill:'基础换刃、简单平花动作',deepBuddy:'爱拍照、爱分享的社交型雪友'},
+  'T1S1G2R2':{tag:'雪场欢乐冲手',subtitle:'社交型冒险者',summary:'你喜欢和雪友组团出行，也愿意尝试小挑战，主打"快乐与刺激并存"。',dimT:'道内保守',dimS:'慢速休闲',dimG:'社交达人',dimR:'敢于小试',friend:'跟他滑雪又热闹又好玩，双板敢切蘑菇，单板敢冲粉雪，还会帮大家拍视频，社交+冒险双担当。',deepScene:'道内中高级道、蘑菇道、平花公园',deepRoute:'中级道→蘑菇道进阶路线，适合朋友一起探索',deepSkill:'蘑菇节奏把控、平花连贯动作',deepBuddy:'既爱玩又敢冲的活跃型雪友'},
+  'T1S2G1R1':{tag:'雪场速滑独狼',subtitle:'低调速滑型',summary:'你喜欢速度带来的快感，专注于自己的滑行节奏，低调且专注。',dimT:'道内为主',dimS:'速度激情',dimG:'社恐独行',dimR:'安全第一',friend:'他滑得是真快，双板卡宾丝滑，单板刻滑也超帅，就是不爱说话，全程一个人冲，不挑战高难度。',deepScene:'道内卡宾道、平行大回转赛道、刻滑专道',deepRoute:'雪场旗门赛道或卡宾专项道，追求流畅度',deepSkill:'高速卡宾、平行大回转、刻滑压雪',deepBuddy:'同样专注技术的独行侠，不需要太多话'},
+  'T1S2G1R2':{tag:'雪场孤高强者',subtitle:'独行速滑王',summary:'你是道内的隐藏强者，享受速度与技巧带来的成就感，不张扬但实力拉满。',dimT:'道内为主',dimS:'速度激情',dimG:'社恐独行',dimR:'敢于挑战',friend:'他一个人滑的速度比我们组团还快，双板蘑菇切得丝滑，单板刻滑也超稳，就是不爱合群。',deepScene:'道内高难度道、蘑菇道、旗门专业道',deepRoute:'雪场所有高难度道内路线，一条接一条刷',deepSkill:'高速蘑菇、旗门精准过弯、自由式基础',deepBuddy:'不需要同伴，或者只需要技术相当的对手'},
+  'T1S2G2R1':{tag:'雪场社交速滑手',subtitle:'实力搭子型',summary:'你滑行速度快、技巧好，既能自己享受速滑的快乐，也能带动身边的朋友。',dimT:'道内为主',dimS:'速度激情',dimG:'社交达人',dimR:'安全第一',friend:'他滑得又快又好，双板卡宾、单板刻滑都很牛，还愿意带我们这些新手，跟他滑雪既能玩得开心又能提升技巧。',deepScene:'道内卡宾道、平行大回转道、刻滑专道',deepRoute:'中级道→高级道进阶教学路线，适合带人',deepSkill:'高速卡宾教学、动作拆解示范',deepBuddy:'想提升技术的新手或同等实力的雪友'},
+  'T1S2G2R2':{tag:'雪场氛围强者',subtitle:'社交实力双在线',summary:'你是雪友圈的"天花板"级搭子，滑得好又会社交，是雪场的核心人物。',dimT:'道内为主',dimS:'速度激情',dimG:'社交达人',dimR:'敢于挑战',friend:'有他在既能体验到双板卡宾、单板刻滑的快乐，又能感受到热闹的氛围，还能学到技巧，妥妥的雪场核心人物。',deepScene:'道内所有路线、蘑菇道、简单野雪区',deepRoute:'雪场全覆盖，根据同伴水平随时调整',deepSkill:'综合技术、教学能力、氛围带动',deepBuddy:'任何类型的雪友都能带，适合当队长'},
+  'T2S1G1R1':{tag:'雪场野雪佛系者',subtitle:'野雪摆烂型',summary:'你喜欢野雪的氛围感，主打"沉浸式感受野雪"，不追求速度。',dimT:'野雪探索',dimS:'慢速休闲',dimG:'社恐独行',dimR:'安全第一',friend:'他总爱一个人去野雪区晃，滑得很慢却很享受，不冲不卷，主打沉浸式野雪体验。',deepScene:'野雪浅区、林间粉雪道、雪场边缘未压雪区',deepRoute:'雪场边界野雪区，探索安静线路',deepSkill:'粉雪基础、基础破雪、基础树林穿行',deepBuddy:'同样爱野雪但不追求刺激的独行侠'},
+  'T2S1G1R2':{tag:'雪场野雪独行侠',subtitle:'野雪探索者',summary:'你是野雪的忠实爱好者，偏爱独自探索未知线路，享受征服的成就感。',dimT:'野雪探索',dimS:'慢速休闲',dimG:'社恐独行',dimR:'敢于挑战',friend:'他一个人敢去很多野雪线路，看着佛系其实很有经验，对雪况很了解，让人很安心。',deepScene:'野雪深区、树林间、backcountry边界区',deepRoute:'雪场周边野雪路线，需要一定雪况判断',deepSkill:'雪层分析、野雪破雪、树林穿行',deepBuddy:'不需要同伴，或只需要有同样经验的老炮'},
+  'T2S1G2R1':{tag:'雪场野雪搭子',subtitle:'欢乐野雪组',summary:'你喜欢和雪友一起探索野雪，享受团队探索的快乐和热闹氛围。',dimT:'野雪探索',dimS:'慢速休闲',dimG:'社交达人',dimR:'安全第一',friend:'跟他一起去野雪太开心了，不冲不卷还会分享好吃的，氛围感拉满。',deepScene:'野雪浅区、雪场边缘、林间小道',deepRoute:'野雪入门路线，适合多人一起探索',deepSkill:'野雪基础、团队协调、互相救援',deepBuddy:'爱野雪、爱拍照、爱分享的社交型雪友'},
+  'T2S1G2R2':{tag:'雪场野雪氛围组',subtitle:'探索型社交者',summary:'你喜欢和雪友一起探索野雪，既享受社交的快乐，也追求野雪的刺激。',dimT:'野雪探索',dimS:'慢速休闲',dimG:'社交达人',dimR:'敢于挑战',friend:'他既能找到好玩的野雪线路，又能带动大家的氛围，敢冲又会照顾人，跟他去野雪太放心了。',deepScene:'野雪全区域、林间、粉雪坡',deepRoute:'野雪进阶路线，有挑战但相对安全',deepSkill:'野雪破雪、陡坡控制、团队配合',deepBuddy:'有经验且能照顾人的野雪老手'},
+  'T2S2G1R1':{tag:'雪场野雪速滑独狼',subtitle:'低调野雪强者',summary:'你是野雪领域的隐藏强者，速度快、技巧娴熟，不张扬但实力出众。',dimT:'野雪探索',dimS:'速度激情',dimG:'社恐独行',dimR:'安全第一',friend:'他一个人滑野雪的速度快到惊人，技巧也到位，对雪况判断很准，一看就是老炮，就是不爱说话。',deepScene:'野雪深区、陡坡、couloir',deepRoute:'backcountry路线，需要有认证的老炮带领',deepSkill:'野雪高速滑行、couloir、陡坡技术',deepBuddy:'不需要同伴，技术相当的老炮即可'},
+  'T2S2G1R2':{tag:'全山征服者',subtitle:'野雪老炮',summary:'你是滑雪鄙视链的顶端，战场是无人涉足的粉雪坡面和陡峭couloir。',dimT:'野雪探索',dimS:'速度激情',dimG:'社恐独行',dimR:'敢于挑战',friend:'跟他去过一次backcountry之后，才知道什么叫真正的滑雪，他太唠叨出发前的安全讲解能说半小时。',deepScene:'backcountry全区域、粉雪圣地区、登山滑雪区',deepRoute:'完全自主探索，不需要向导',deepSkill:'雪崩救援、高山滑雪、全山地貌判断',deepBuddy:'不需要同伴，需要的是技术和认证'},
+  'T2S2G2R1':{tag:'雪场野雪社交强者',subtitle:'实力带飞型',summary:'你是野雪圈的实力担当，滑得快又会社交，是雪友圈里的"带飞大神"。',dimT:'野雪探索',dimS:'速度激情',dimG:'社交达人',dimR:'安全第一',friend:'他滑野雪又快又稳，还会照顾我们这些新手，教我们判断雪况，跟他去野雪既能玩得刺激又能保证安全。',deepScene:'野雪中高级区域、林间、简单陡坡',deepRoute:'野雪教学路线，适合带新手入门',deepSkill:'野雪教学、雪况判断、团队救援',deepBuddy:'想学野雪的新手，有经验的队友'},
+  'T2S2G2R2':{tag:'雪场王者',subtitle:'全山社交大神',summary:'你是滑雪圈的天花板，滑得好会社交还会照顾人，是雪友圈公认的王者。',dimT:'野雪探索',dimS:'速度激情',dimG:'社交达人',dimR:'敢于挑战',friend:'他就是滑雪圈的大神，滑得好会社交还会照顾人，跟他滑雪既能体验最刺激的野雪，又能感受最热闹的氛围。',deepScene:'所有地形全覆盖，道内、野雪、backcountry',deepRoute:'根据队友情况自由切换，领袖型路线',deepSkill:'全能选手，应变能力强',deepBuddy:'任何雪友都能带，是全能型队长'}
+};
+
+let currentQuestion = 0;
+let answers = {T:{A:0,B:0},S:{A:0,B:0},G:{A:0,B:0},R:{A:0,B:0}};
+
+function startQuiz() {
+  document.getElementById('startScreen').classList.remove('active');
+  document.getElementById('quizScreen').classList.add('active');
+  showQuestion(0);
+}
+
+function showQuestion(index) {
+  currentQuestion = index;
+  const q = questions[index];
+  document.getElementById('progressFill').style.width = ((index + 1) / questions.length * 100) + '%';
+  document.getElementById('progressText').textContent = (index + 1) + '/' + questions.length;
+  document.getElementById('questionNumber').textContent = '问题 ' + (index + 1);
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('optionAMain').textContent = q.A;
+  document.getElementById('optionADetail').textContent = '说人话：' + q.Ad;
+  document.getElementById('optionBMain').textContent = q.B;
+  document.getElementById('optionBDetail').textContent = '说人话：' + q.Bd;
+  document.getElementById('optionCMain').textContent = q.C;
+  document.getElementById('optionCDetail').textContent = '说人话：' + q.Cd;
+  document.getElementById('quizScreen').querySelector('.question-card').style.animation = 'none';
+  setTimeout(() => { document.getElementById('quizScreen').querySelector('.question-card').style.animation = 'fadeIn 0.4s ease'; }, 10);
+}
+
+function selectOption(option) {
+  const dim = questions[currentQuestion].dim;
+  if (option === 'B') { answers[dim].B++; } else { answers[dim].A++; }
+  if (currentQuestion < questions.length - 1) { showQuestion(currentQuestion + 1); } else { showResult(); }
+}
+
+function calculateResult() {
+  let code = '';
+  for (let dim of ['T','S','G','R']) {
+    const vals = answers[dim];
+    code += (vals.B > vals.A) ? dim + '2' : dim + '1';
+  }
+  return code;
+}
+
+function showResult() {
+  document.getElementById('quizScreen').classList.remove('active');
+  document.getElementById('resultScreen').classList.add('active');
+  const code = calculateResult();
+  const result = results[code];
+  document.getElementById('resultCode').textContent = code;
+  document.getElementById('resultTag').textContent = result.tag;
+  document.getElementById('resultSubtitle').textContent = result.subtitle;
+  document.getElementById('resultSummary').textContent = result.summary;
+  document.getElementById('dimT').textContent = result.dimT;
+  document.getElementById('dimS').textContent = result.dimS;
+  document.getElementById('dimG').textContent = result.dimG;
+  document.getElementById('dimR').textContent = result.dimR;
+  document.getElementById('resultFriend').textContent = result.friend;
+  document.getElementById('deepScene').textContent = result.deepScene;
+  document.getElementById('deepRoute').textContent = result.deepRoute;
+  document.getElementById('deepSkill').textContent = result.deepSkill;
+  document.getElementById('deepBuddy').textContent = result.deepBuddy;
+}
+
+function toggleDeepAnalysis() {
+  const toggle = document.getElementById('deepToggle');
+  const content = document.getElementById('deepContent');
+  toggle.classList.toggle('active');
+  content.classList.toggle('active');
+  toggle.querySelector('span:first-child').textContent = content.classList.contains('active') ? '收起深度分析' : '展开深度分析';
+}
+
+function restartQuiz() {
+  answers = {T:{A:0,B:0},S:{A:0,B:0},G:{A:0,B:0},R:{A:0,B:0}};
+  document.getElementById('resultScreen').classList.remove('active');
+  document.getElementById('startScreen').classList.add('active');
+  document.getElementById('deepToggle').classList.remove('active');
+  document.getElementById('deepContent').classList.remove('active');
+  document.getElementById('deepToggle').querySelector('span:first-child').textContent = '展开深度分析';
+}
+  </script>
+</body>
+</html>
